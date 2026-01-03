@@ -8,14 +8,17 @@ describe("PolygonBridge", function () {
   async function deployBridgeFixture() {
     const [owner, relayer, user] = await ethers.getSigners();
 
-    // Deploy WrappedTON
-    const WrappedTON = await ethers.getContractFactory("WrappedTON");
-    const wrappedTON = await WrappedTON.deploy();
+    // Deploy WrappedTON (not as proxy for testing)
+    const WrappedTONFactory = await ethers.getContractFactory("WrappedTON");
+    const wrappedTON = await WrappedTONFactory.deploy() as WrappedTON;
     await wrappedTON.waitForDeployment();
-    await wrappedTON.initialize(owner.address, ethers.ZeroAddress);
 
-    // Deploy Bridge
-    const PolygonBridge = await ethers.getContractFactory("PolygonBridge");
+    // Deploy Bridge (not as proxy for testing)
+    const PolygonBridgeFactory = await ethers.getContractFactory("PolygonBridge");
+    const bridge = await PolygonBridgeFactory.deploy() as PolygonBridge;
+    await bridge.waitForDeployment();
+
+    // Initialize contracts
     const config = {
       minBridgeAmount: ethers.parseEther("0.1"),
       maxBridgeAmount: ethers.parseEther("1000"),
@@ -24,12 +27,10 @@ describe("PolygonBridge", function () {
       enabled: true
     };
 
-    const bridge = await PolygonBridge.deploy();
-    await bridge.waitForDeployment();
+    await wrappedTON.initialize(owner.address, await bridge.getAddress());
     await bridge.initialize(owner.address, owner.address, config);
 
-    // Setup
-    await wrappedTON.updateBridge(await bridge.getAddress());
+    // Grant relayer role
     const RELAYER_ROLE = await bridge.RELAYER_ROLE();
     await bridge.grantRole(RELAYER_ROLE, relayer.address);
 
@@ -42,6 +43,7 @@ describe("PolygonBridge", function () {
       const config = await bridge.config();
       expect(config.minBridgeAmount).to.equal(ethers.parseEther("0.1"));
       expect(config.feeBasisPoints).to.equal(30);
+      expect(config.relayerThreshold).to.equal(1);
     });
 
     it("Should set correct roles", async function () {
@@ -49,13 +51,18 @@ describe("PolygonBridge", function () {
       const RELAYER_ROLE = await bridge.RELAYER_ROLE();
       expect(await bridge.hasRole(RELAYER_ROLE, relayer.address)).to.be.true;
     });
+
+    it("Should support POL by default", async function () {
+      const { bridge } = await loadFixture(deployBridgeFixture);
+      expect(await bridge.supportedTokens(ethers.ZeroAddress)).to.be.true;
+    });
   });
 
   describe("Bridging", function () {
     it("Should bridge POL to TON", async function () {
       const { bridge, user } = await loadFixture(deployBridgeFixture);
       const amount = ethers.parseEther("1");
-      const tonRecipient = "EQD...test-ton-address";
+      const tonRecipient = "EQD4nS9m7Ghs9Rj8Q5JoRB9vYiYbKkT4pKQT9U_test_address";
 
       await expect(
         bridge.connect(user).bridgeToTON(
@@ -73,7 +80,7 @@ describe("PolygonBridge", function () {
       
       await expect(
         bridge.connect(user).bridgeToTON(
-          "EQD...test",
+          "EQD4nS9m7test",
           ethers.ZeroAddress,
           amount,
           { value: amount }
@@ -81,10 +88,24 @@ describe("PolygonBridge", function () {
       ).to.be.revertedWithCustomError(bridge, "InsufficientAmount");
     });
 
+    it("Should reject amount above maximum", async function () {
+      const { bridge, user } = await loadFixture(deployBridgeFixture);
+      const amount = ethers.parseEther("10000");
+      
+      await expect(
+        bridge.connect(user).bridgeToTON(
+          "EQD4nS9m7test",
+          ethers.ZeroAddress,
+          amount,
+          { value: amount }
+        )
+      ).to.be.revertedWithCustomError(bridge, "ExceedsMaxAmount");
+    });
+
     it("Should calculate fees correctly", async function () {
       const { bridge, user } = await loadFixture(deployBridgeFixture);
       const amount = ethers.parseEther("1");
-      const tonRecipient = "EQD...test";
+      const tonRecipient = "EQD4nS9m7test";
 
       const tx = await bridge.connect(user).bridgeToTON(
         tonRecipient,
@@ -108,6 +129,54 @@ describe("PolygonBridge", function () {
         const fee = parsed?.args[5];
         // Fee should be 0.3% = 0.003 ETH
         expect(fee).to.equal(ethers.parseEther("0.003"));
+      }
+    });
+
+    it("Should reject unsupported tokens", async function () {
+      const { bridge, user } = await loadFixture(deployBridgeFixture);
+      const fakeTokenAddress = "0x1111111111111111111111111111111111111111";
+      
+      await expect(
+        bridge.connect(user).bridgeToTON(
+          "EQD4nS9m7test",
+          fakeTokenAddress,
+          ethers.parseEther("1")
+        )
+      ).to.be.revertedWithCustomError(bridge, "UnsupportedToken");
+    });
+  });
+
+  describe("Relayer Operations", function () {
+    it("Should allow relayer to confirm transfer", async function () {
+      const { bridge, user, relayer } = await loadFixture(deployBridgeFixture);
+      const amount = ethers.parseEther("1");
+
+      const tx = await bridge.connect(user).bridgeToTON(
+        "EQD4test",
+        ethers.ZeroAddress,
+        amount,
+        { value: amount }
+      );
+
+      const receipt = await tx.wait();
+      const event = receipt?.logs.find((log: any) => {
+        try {
+          return bridge.interface.parseLog(log)?.name === "BridgeInitiated";
+        } catch {
+          return false;
+        }
+      });
+
+      if (event) {
+        const parsed = bridge.interface.parseLog(event);
+        const transferId = parsed?.args[0];
+
+        await expect(
+          bridge.connect(relayer).confirmTransfer(transferId)
+        ).to.emit(bridge, "BridgeConfirmed");
+
+        const transfer = await bridge.getTransfer(transferId);
+        expect(transfer.confirmations).to.equal(1);
       }
     });
   });
