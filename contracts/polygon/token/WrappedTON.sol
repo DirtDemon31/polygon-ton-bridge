@@ -6,18 +6,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-/**
- * @title WrappedTON
- * @notice ERC20 representation of TON tokens on Polygon
- * @dev Implements mint/burn mechanism for bridge operations
- */
 contract WrappedTON is 
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
     ERC20PausableUpgradeable,
-    AccessControlUpgradeable
+    AccessControlUpgradeable,
+    UUPSUpgradeable
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -40,11 +37,11 @@ contract WrappedTON is
         __ERC20Burnable_init();
         __ERC20Pausable_init();
         __AccessControl_init();
+        __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(PAUSER_ROLE, _admin);
 
-        // Bridge can be zero initially and set later via updateBridge
         if (_bridge != address(0)) {
             _grantRole(MINTER_ROLE, _bridge);
             bridge = _bridge;
@@ -76,14 +73,11 @@ contract WrappedTON is
         
         address oldBridge = bridge;
         
-        // Revoke old bridge minter role if it exists
         if (oldBridge != address(0)) {
             _revokeRole(MINTER_ROLE, oldBridge);
         }
         
-        // Grant new bridge minter role
         _grantRole(MINTER_ROLE, newBridge);
-        
         bridge = newBridge;
 
         emit BridgeUpdated(oldBridge, newBridge);
@@ -100,6 +94,8 @@ contract WrappedTON is
     function decimals() public pure override returns (uint8) {
         return 9;
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     function _update(
         address from,
