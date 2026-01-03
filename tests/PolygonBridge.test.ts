@@ -97,7 +97,7 @@ describe("PolygonBridge", function () {
 
     it("Should reject amount above maximum", async function () {
       const { bridge, user } = await loadFixture(deployBridgeFixture);
-      const amount = ethers.parseEther("10000");
+      const amount = ethers.parseEther("1001"); // Just above max
       
       await expect(
         bridge.connect(user).bridgeToTON(
