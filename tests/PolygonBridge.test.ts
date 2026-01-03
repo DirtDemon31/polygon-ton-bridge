@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import hre from "hardhat";
+const { ethers } = hre;
 import { PolygonBridge, WrappedTON } from "../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("PolygonBridge", function () {
@@ -45,7 +45,7 @@ describe("PolygonBridge", function () {
     });
 
     it("Should set correct roles", async function () {
-      const { bridge, owner, relayer } = await loadFixture(deployBridgeFixture);
+      const { bridge, relayer } = await loadFixture(deployBridgeFixture);
       const RELAYER_ROLE = await bridge.RELAYER_ROLE();
       expect(await bridge.hasRole(RELAYER_ROLE, relayer.address)).to.be.true;
     });
