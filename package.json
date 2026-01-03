@@ -1,0 +1,52 @@
+{
+  "name": "polygon-ton-bridge",
+  "version": "0.1.0",
+  "description": "Production-grade DeFi bridge connecting Polygon and TON networks",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DirtDemon31/Polygon-Ton-Bridge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/DirtDemon31/Polygon-Ton-Bridge/issues"
+  },
+  "homepage": "https://github.com/DirtDemon31/Polygon-Ton-Bridge#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@ton/core": "^0.62.0",
+    "@ton/ton": "^16.1.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.0.3",
+    "chai": "^6.2.2",
+    "circomlib": "^2.0.5",
+    "ethers": "^6.16.0",
+    "hardhat": "^3.1.2",
+    "mocha": "^11.7.5",
+    "snarkjs": "^0.7.5",
+    "ton": "^6.13.1",
+    "ton-core": "^0.53.0",
+    "ton-crypto": "^3.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/contracts-upgradeable": "^5.4.0",
+    "@tonconnect/sdk": "^3.3.1",
+    "dotenv": "^17.2.3",
+    "viem": "^2.43.5"
+  }
+}
