@@ -5,3 +5,19 @@ cache
 dist
 coverage
 .DS_Store
+
+# Hardhat artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Environment
+.env
+.env.backup
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
