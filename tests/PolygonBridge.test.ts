@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import hre from "hardhat";
-const { ethers } = hre;
+const { ethers, upgrades } = hre;
 import { PolygonBridge, WrappedTON } from "../typechain-types";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 
@@ -8,17 +8,17 @@ describe("PolygonBridge", function () {
   async function deployBridgeFixture() {
     const [owner, relayer, user] = await ethers.getSigners();
 
-    // Deploy WrappedTON (not as proxy for testing)
+    // Deploy WrappedTON with proxy
     const WrappedTONFactory = await ethers.getContractFactory("WrappedTON");
-    const wrappedTON = await WrappedTONFactory.deploy() as WrappedTON;
+    const wrappedTON = await upgrades.deployProxy(
+      WrappedTONFactory,
+      [owner.address, ethers.ZeroAddress], // Temporary bridge address
+      { initializer: "initialize" }
+    ) as unknown as WrappedTON;
     await wrappedTON.waitForDeployment();
 
-    // Deploy Bridge (not as proxy for testing)
+    // Deploy Bridge with proxy
     const PolygonBridgeFactory = await ethers.getContractFactory("PolygonBridge");
-    const bridge = await PolygonBridgeFactory.deploy() as PolygonBridge;
-    await bridge.waitForDeployment();
-
-    // Initialize contracts
     const config = {
       minBridgeAmount: ethers.parseEther("0.1"),
       maxBridgeAmount: ethers.parseEther("1000"),
@@ -27,8 +27,15 @@ describe("PolygonBridge", function () {
       enabled: true
     };
 
-    await wrappedTON.initialize(owner.address, await bridge.getAddress());
-    await bridge.initialize(owner.address, owner.address, config);
+    const bridge = await upgrades.deployProxy(
+      PolygonBridgeFactory,
+      [owner.address, owner.address, config],
+      { initializer: "initialize" }
+    ) as unknown as PolygonBridge;
+    await bridge.waitForDeployment();
+
+    // Update wrappedTON to use actual bridge
+    await wrappedTON.updateBridge(await bridge.getAddress());
 
     // Grant relayer role
     const RELAYER_ROLE = await bridge.RELAYER_ROLE();
