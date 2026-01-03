@@ -1,4 +1,5 @@
-import { ethers, upgrades } from "hardhat";
+import hre from "hardhat";
+const { ethers, upgrades } = hre;
 import * as fs from "fs";
 import * as path from "path";
 
@@ -21,19 +22,16 @@ async function main() {
   console.log("📍 Deploying contracts with account:", deployer.address);
   console.log("💰 Account balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH\n");
 
-  // Get network info
   const network = await ethers.provider.getNetwork();
   console.log("🌐 Network:", network.name, "Chain ID:", network.chainId.toString(), "\n");
 
-  // ============================================
   // Step 1: Deploy WrappedTON
-  // ============================================
   console.log("📦 Step 1: Deploying WrappedTON...");
   const WrappedTONFactory = await ethers.getContractFactory("WrappedTON");
   
   const wrappedTON = await upgrades.deployProxy(
     WrappedTONFactory,
-    [deployer.address, ethers.ZeroAddress], // Admin and temporary bridge
+    [deployer.address, ethers.ZeroAddress],
     { 
       initializer: "initialize",
       kind: "uups"
@@ -47,16 +45,14 @@ async function main() {
   const wrappedTONImplAddress = await upgrades.erc1967.getImplementationAddress(wrappedTONAddress);
   console.log("   Implementation at:", wrappedTONImplAddress, "\n");
 
-  // ============================================
   // Step 2: Deploy PolygonBridge
-  // ============================================
   console.log("📦 Step 2: Deploying PolygonBridge...");
   
   const config = {
-    minBridgeAmount: ethers.parseEther("0.1"),      // 0.1 POL minimum
-    maxBridgeAmount: ethers.parseEther("1000"),     // 1000 POL maximum
-    feeBasisPoints: 30,                              // 0.3% fee
-    relayerThreshold: 1,                             // 1 relayer confirmation required
+    minBridgeAmount: ethers.parseEther("0.1"),
+    maxBridgeAmount: ethers.parseEther("1000"),
+    feeBasisPoints: 30,
+    relayerThreshold: 1,
     enabled: true
   };
 
@@ -78,17 +74,13 @@ async function main() {
   const bridgeImplAddress = await upgrades.erc1967.getImplementationAddress(bridgeAddress);
   console.log("   Implementation at:", bridgeImplAddress, "\n");
 
-  // ============================================
   // Step 3: Update WrappedTON with Bridge address
-  // ============================================
   console.log("🔗 Step 3: Connecting WrappedTON to Bridge...");
   const updateTx = await wrappedTON.updateBridge(bridgeAddress);
   await updateTx.wait();
   console.log("✅ WrappedTON connected to Bridge\n");
 
-  // ============================================
   // Step 4: Deploy BridgeDAO
-  // ============================================
   console.log("📦 Step 4: Deploying BridgeDAO...");
   
   const BridgeDAOFactory = await ethers.getContractFactory("BridgeDAO");
@@ -109,21 +101,16 @@ async function main() {
   const daoImplAddress = await upgrades.erc1967.getImplementationAddress(daoAddress);
   console.log("   Implementation at:", daoImplAddress, "\n");
 
-  // ============================================
   // Step 5: Setup Roles
-  // ============================================
   console.log("🔐 Step 5: Setting up roles...");
   
-  // Grant deployer relayer role for testing
   const RELAYER_ROLE = await bridge.RELAYER_ROLE();
   const grantTx = await bridge.grantRole(RELAYER_ROLE, deployer.address);
   await grantTx.wait();
   console.log("✅ Granted RELAYER_ROLE to deployer\n");
 
-  // ============================================
   // Step 6: Save Deployment Info
-  // ============================================
-  console.log("�� Step 6: Saving deployment info...");
+  console.log("💾 Step 6: Saving deployment info...");
   
   const deploymentInfo: DeploymentAddresses = {
     wrappedTON: wrappedTONImplAddress,
@@ -148,9 +135,7 @@ async function main() {
   fs.writeFileSync(filepath, JSON.stringify(deploymentInfo, null, 2));
   console.log("✅ Deployment info saved to:", filepath, "\n");
 
-  // ============================================
   // Summary
-  // ============================================
   console.log("═══════════════════════════════════════════════════════");
   console.log("🎉 DEPLOYMENT COMPLETE!");
   console.log("═══════════════════════════════════════════════════════");
