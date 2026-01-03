@@ -10,7 +10,6 @@ import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelo
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract BridgeDAO is
     Initializable,
@@ -20,9 +19,10 @@ contract BridgeDAO is
     GovernorVotesUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
     GovernorTimelockControlUpgradeable,
-    UUPSUpgradeable,
-    AccessControlUpgradeable
+    UUPSUpgradeable
 {
+    address private _admin;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -37,8 +37,9 @@ contract BridgeDAO is
         __GovernorCountingSimple_init();
         __GovernorVotes_init(IVotes(_token));
         __GovernorVotesQuorumFraction_init(4);
-        __AccessControl_init();
         __UUPSUpgradeable_init();
+
+        _admin = msg.sender;
 
         address[] memory proposers = new address[](1);
         address[] memory executors = new address[](1);
@@ -49,8 +50,6 @@ contract BridgeDAO is
         timelock.initialize(2 days, proposers, executors, address(this));
         
         __GovernorTimelockControl_init(timelock);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function votingDelay() public view override(GovernorUpgradeable, GovernorSettingsUpgradeable) returns (uint256) {
@@ -110,5 +109,7 @@ contract BridgeDAO is
         return super._executor();
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override {
+        require(msg.sender == _admin, "Only admin");
+    }
 }
