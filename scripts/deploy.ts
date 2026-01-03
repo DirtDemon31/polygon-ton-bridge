@@ -8,8 +8,6 @@ interface DeploymentAddresses {
   wrappedTONProxy: string;
   polygonBridge: string;
   polygonBridgeProxy: string;
-  bridgeDAO: string;
-  bridgeDAOProxy: string;
   deployer: string;
   network: string;
   timestamp: string;
@@ -80,45 +78,22 @@ async function main() {
   await updateTx.wait();
   console.log("✅ WrappedTON connected to Bridge\n");
 
-  // Step 4: Deploy BridgeDAO
-  console.log("📦 Step 4: Deploying BridgeDAO...");
-  
-  const BridgeDAOFactory = await ethers.getContractFactory("BridgeDAO");
-  
-  const dao = await upgrades.deployProxy(
-    BridgeDAOFactory,
-    [bridgeAddress, wrappedTONAddress],
-    { 
-      initializer: "initialize",
-      kind: "uups"
-    }
-  );
-  await dao.waitForDeployment();
-  
-  const daoAddress = await dao.getAddress();
-  console.log("✅ BridgeDAO Proxy deployed to:", daoAddress);
-  
-  const daoImplAddress = await upgrades.erc1967.getImplementationAddress(daoAddress);
-  console.log("   Implementation at:", daoImplAddress, "\n");
-
-  // Step 5: Setup Roles
-  console.log("🔐 Step 5: Setting up roles...");
+  // Step 4: Setup Roles
+  console.log("🔐 Step 4: Setting up roles...");
   
   const RELAYER_ROLE = await bridge.RELAYER_ROLE();
   const grantTx = await bridge.grantRole(RELAYER_ROLE, deployer.address);
   await grantTx.wait();
   console.log("✅ Granted RELAYER_ROLE to deployer\n");
 
-  // Step 6: Save Deployment Info
-  console.log("💾 Step 6: Saving deployment info...");
+  // Step 5: Save Deployment Info
+  console.log("💾 Step 5: Saving deployment info...");
   
   const deploymentInfo: DeploymentAddresses = {
     wrappedTON: wrappedTONImplAddress,
     wrappedTONProxy: wrappedTONAddress,
     polygonBridge: bridgeImplAddress,
     polygonBridgeProxy: bridgeAddress,
-    bridgeDAO: daoImplAddress,
-    bridgeDAOProxy: daoAddress,
     deployer: deployer.address,
     network: network.name,
     timestamp: new Date().toISOString()
@@ -142,13 +117,13 @@ async function main() {
   console.log("\n📋 Contract Addresses:\n");
   console.log("  WrappedTON Proxy:      ", wrappedTONAddress);
   console.log("  PolygonBridge Proxy:   ", bridgeAddress);
-  console.log("  BridgeDAO Proxy:       ", daoAddress);
   console.log("\n📝 Next Steps:\n");
   console.log("  1. Verify contracts on PolygonScan");
   console.log("  2. Add additional relayers via grantRole()");
-  console.log("  3. Configure bridge parameters via DAO");
-  console.log("  4. Test bridging with small amounts");
-  console.log("  5. Set up monitoring and alerts");
+  console.log("  3. Test bridging with small amounts");
+  console.log("  4. Set up monitoring and alerts");
+  console.log("\n  Note: BridgeDAO skipped (contract too large)");
+  console.log("  DAO can be deployed separately with optimization");
   console.log("\n═══════════════════════════════════════════════════════\n");
 }
 
