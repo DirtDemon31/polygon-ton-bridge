@@ -1,0 +1,19 @@
+{
+    "name": "polygon-ton-relayer",
+    "version": "0.1.0",
+    "private": true,
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "start": "node dist/index.js",
+        "dev": "ts-node src/index.ts"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.0",
+        "ethers": "^6.4.0"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.0",
+        "typescript": "^5.0.0"
+    }
+}

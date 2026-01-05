@@ -11,7 +11,9 @@
     "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
     "verify:amoy": "HARDHAT_NETWORK=polygonAmoy hardhat run scripts/verify.ts",
     "verify:polygon": "HARDHAT_NETWORK=polygon hardhat run scripts/verify.ts",
-    "test:bridge:local": "hardhat run scripts/testBridge.local.ts"
+    "test:bridge:local": "hardhat run scripts/testBridge.local.ts",
+    "relayer:dev": "cd relayer && ts-node src/index.ts",
+    "bridge:amoy": "HARDHAT_NETWORK=polygonAmoy hardhat run scripts/bridgeOnAmoy.ts"
   },
   "license": "MIT",
   "devDependencies": {
