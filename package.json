@@ -10,7 +10,8 @@
     "deploy:amoy": "hardhat run scripts/deploy.ts --network polygonAmoy",
     "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
     "verify:amoy": "HARDHAT_NETWORK=polygonAmoy hardhat run scripts/verify.ts",
-    "verify:polygon": "HARDHAT_NETWORK=polygon hardhat run scripts/verify.ts"
+    "verify:polygon": "HARDHAT_NETWORK=polygon hardhat run scripts/verify.ts",
+    "test:bridge:local": "hardhat run scripts/testBridge.local.ts"
   },
   "license": "MIT",
   "devDependencies": {

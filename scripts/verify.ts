@@ -1,87 +1,69 @@
+// scripts/verify.ts
 import hre from "hardhat";
 const { run } = hre;
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 async function main() {
   console.log("🔍 Starting contract verification...\n");
 
-  const network = process.env.HARDHAT_NETWORK || "polygonAmoy";
-  
+  const network = process.env.HARDHAT_NETWORK || hre.network.name;
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
   const deploymentsDir = path.join(__dirname, "..", "deployments");
   if (!fs.existsSync(deploymentsDir)) {
-    console.error("❌ No deployments directory found");
-    return;
+    throw new Error("No deployments directory found");
   }
 
-  const files = fs.readdirSync(deploymentsDir);
-  const deploymentFile = files.find(f => f.includes(network));
-  
+  const deploymentFile = fs
+    .readdirSync(deploymentsDir)
+    .find((f) => f.includes(network));
+
   if (!deploymentFile) {
-    console.error("❌ No deployment file found for network:", network);
-    return;
+    throw new Error(`No deployment file found for network: ${network}`);
   }
 
-  const deployment = JSON.parse(
-    fs.readFileSync(path.join(deploymentsDir, deploymentFile), "utf-8")
-  );
+  const deploymentPath = path.join(deploymentsDir, deploymentFile);
+  const deployment = JSON.parse(fs.readFileSync(deploymentPath, "utf-8"));
 
-  console.log("📋 Verifying contracts from:", deploymentFile, "\n");
+  console.log(`📄 Using deployment file: ${deploymentFile}\n`);
 
-  // Verify WrappedTON Implementation
-  console.log("1️⃣ Verifying WrappedTON...");
-  try {
-    await run("verify:verify", {
-      address: deployment.wrappedTON,
-      constructorArguments: []
-    });
-    console.log("✅ WrappedTON verified\n");
-  } catch (error: any) {
-    if (error.message.includes("Already Verified")) {
-      console.log("✅ Already verified\n");
-    } else {
-      console.error("❌ Failed:", error.message, "\n");
+  if (deployment.wrappedTON) {
+    console.log("1️⃣ Verifying WrappedTON implementation:", deployment.wrappedTON);
+    try {
+      await run("verify:verify", {
+        address: deployment.wrappedTON,
+        constructorArguments: [],
+      });
+      console.log("✅ WrappedTON implementation verified\n");
+    } catch (e: any) {
+      console.error("❌ WrappedTON verify failed:", e.message);
     }
   }
 
-  // Verify PolygonBridge Implementation
-  console.log("2️⃣ Verifying PolygonBridge...");
-  try {
-    await run("verify:verify", {
-      address: deployment.polygonBridge,
-      constructorArguments: []
-    });
-    console.log("✅ PolygonBridge verified\n");
-  } catch (error: any) {
-    if (error.message.includes("Already Verified")) {
-      console.log("✅ Already verified\n");
-    } else {
-      console.error("❌ Failed:", error.message, "\n");
+  if (deployment.polygonBridge) {
+    console.log(
+      "2️⃣ Verifying PolygonBridge implementation:",
+      deployment.polygonBridge
+    );
+    try {
+      await run("verify:verify", {
+        address: deployment.polygonBridge,
+        constructorArguments: [],
+      });
+      console.log("✅ PolygonBridge implementation verified\n");
+    } catch (e: any) {
+      console.error("❌ PolygonBridge verify failed:", e.message);
     }
   }
 
-  // Verify BridgeDAO Implementation
-  console.log("3️⃣ Verifying BridgeDAO...");
-  try {
-    await run("verify:verify", {
-      address: deployment.bridgeDAO,
-      constructorArguments: []
-    });
-    console.log("✅ BridgeDAO verified\n");
-  } catch (error: any) {
-    if (error.message.includes("Already Verified")) {
-      console.log("✅ Already verified\n");
-    } else {
-      console.error("❌ Failed:", error.message, "\n");
-    }
-  }
-
-  console.log("🎉 Verification complete!\n");
+  console.log("🎉 Verification script finished.\n");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error("❌ Error:", error);
-    process.exit(1);
-  });
+main().catch((err) => {
+  console.error("❌ Error in verify script:", err);
+  process.exit(1);
+});

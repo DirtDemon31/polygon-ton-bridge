@@ -2,6 +2,7 @@ import hre from "hardhat";
 const { ethers, upgrades } = hre;
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 interface DeploymentAddresses {
   wrappedTON: string;
@@ -98,6 +99,10 @@ async function main() {
     network: network.name,
     timestamp: new Date().toISOString()
   };
+
+  // __dirname replacement for ES modules
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
 
   const deploymentsDir = path.join(__dirname, "..", "deployments");
   if (!fs.existsSync(deploymentsDir)) {
