@@ -24,40 +24,6 @@ import type {
 } from "../../../common";
 
 export declare namespace PolygonBridge {
-  export type BridgeTransferStruct = {
-    sender: AddressLike;
-    tonRecipient: string;
-    token: AddressLike;
-    amount: BigNumberish;
-    fee: BigNumberish;
-    timestamp: BigNumberish;
-    tonTxHash: BytesLike;
-    status: BigNumberish;
-    confirmations: BigNumberish;
-  };
-
-  export type BridgeTransferStructOutput = [
-    sender: string,
-    tonRecipient: string,
-    token: string,
-    amount: bigint,
-    fee: bigint,
-    timestamp: bigint,
-    tonTxHash: string,
-    status: bigint,
-    confirmations: bigint
-  ] & {
-    sender: string;
-    tonRecipient: string;
-    token: string;
-    amount: bigint;
-    fee: bigint;
-    timestamp: bigint;
-    tonTxHash: string;
-    status: bigint;
-    confirmations: bigint;
-  };
-
   export type BridgeConfigStruct = {
     minBridgeAmount: BigNumberish;
     maxBridgeAmount: BigNumberish;
@@ -79,29 +45,55 @@ export declare namespace PolygonBridge {
     relayerThreshold: bigint;
     enabled: boolean;
   };
+
+  export type TransferStruct = {
+    sender: AddressLike;
+    token: AddressLike;
+    amount: BigNumberish;
+    tonRecipient: string;
+    timestamp: BigNumberish;
+    confirmations: BigNumberish;
+    completed: boolean;
+  };
+
+  export type TransferStructOutput = [
+    sender: string,
+    token: string,
+    amount: bigint,
+    tonRecipient: string,
+    timestamp: bigint,
+    confirmations: bigint,
+    completed: boolean
+  ] & {
+    sender: string;
+    token: string;
+    amount: bigint;
+    tonRecipient: string;
+    timestamp: bigint;
+    confirmations: bigint;
+    completed: boolean;
+  };
 }
 
 export interface PolygonBridgeInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "DEFAULT_ADMIN_ROLE"
-      | "OPERATOR_ROLE"
       | "PAUSER_ROLE"
       | "RELAYER_ROLE"
+      | "UPGRADE_INTERFACE_VERSION"
       | "bridgeToTON"
-      | "collectedFees"
-      | "completeTransfer"
       | "config"
       | "confirmTransfer"
-      | "feeCollector"
       | "getRoleAdmin"
       | "getTransfer"
       | "grantRole"
+      | "hasConfirmed"
       | "hasRole"
       | "initialize"
       | "pause"
       | "paused"
-      | "relayerConfirmations"
+      | "proxiableUUID"
       | "renounceRole"
       | "revokeRole"
       | "setSupportedToken"
@@ -109,15 +101,14 @@ export interface PolygonBridgeInterface extends Interface {
       | "supportsInterface"
       | "transferNonce"
       | "transfers"
-      | "unlockTokens"
       | "unpause"
       | "updateConfig"
-      | "withdrawFees"
+      | "upgradeToAndCall"
+      | "wrappedTON"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "BridgeCancelled"
       | "BridgeCompleted"
       | "BridgeConfirmed"
       | "BridgeInitiated"
@@ -128,16 +119,12 @@ export interface PolygonBridgeInterface extends Interface {
       | "RoleGranted"
       | "RoleRevoked"
       | "TokenSupported"
-      | "TokenUnlocked"
       | "Unpaused"
+      | "Upgraded"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "DEFAULT_ADMIN_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "OPERATOR_ROLE",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -149,25 +136,17 @@ export interface PolygonBridgeInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "bridgeToTON",
-    values: [string, AddressLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "collectedFees",
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "completeTransfer",
-    values: [BytesLike, BytesLike]
+    functionFragment: "bridgeToTON",
+    values: [string, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "config", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "confirmTransfer",
     values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "feeCollector",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getRoleAdmin",
@@ -182,6 +161,10 @@ export interface PolygonBridgeInterface extends Interface {
     values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "hasConfirmed",
+    values: [BytesLike, AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "hasRole",
     values: [BytesLike, AddressLike]
   ): string;
@@ -192,8 +175,8 @@ export interface PolygonBridgeInterface extends Interface {
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "relayerConfirmations",
-    values: [BytesLike, AddressLike]
+    functionFragment: "proxiableUUID",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "renounceRole",
@@ -223,26 +206,22 @@ export interface PolygonBridgeInterface extends Interface {
     functionFragment: "transfers",
     values: [BytesLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "unlockTokens",
-    values: [AddressLike, AddressLike, BigNumberish, BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "updateConfig",
     values: [PolygonBridge.BridgeConfigStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "withdrawFees",
+    functionFragment: "upgradeToAndCall",
+    values: [AddressLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "wrappedTON",
     values?: undefined
   ): string;
 
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "OPERATOR_ROLE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -254,24 +233,16 @@ export interface PolygonBridgeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "bridgeToTON",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "collectedFees",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "completeTransfer",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "config", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "confirmTransfer",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "feeCollector",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -283,12 +254,16 @@ export interface PolygonBridgeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "hasConfirmed",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "relayerConfirmations",
+    functionFragment: "proxiableUUID",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -313,40 +288,23 @@ export interface PolygonBridgeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "transfers", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "unlockTokens",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateConfig",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "withdrawFees",
+    functionFragment: "upgradeToAndCall",
     data: BytesLike
   ): Result;
-}
-
-export namespace BridgeCancelledEvent {
-  export type InputTuple = [transferId: BytesLike, reason: string];
-  export type OutputTuple = [transferId: string, reason: string];
-  export interface OutputObject {
-    transferId: string;
-    reason: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
+  decodeFunctionResult(functionFragment: "wrappedTON", data: BytesLike): Result;
 }
 
 export namespace BridgeCompletedEvent {
-  export type InputTuple = [transferId: BytesLike, tonTxHash: BytesLike];
-  export type OutputTuple = [transferId: string, tonTxHash: string];
+  export type InputTuple = [transferId: BytesLike];
+  export type OutputTuple = [transferId: string];
   export interface OutputObject {
     transferId: string;
-    tonTxHash: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -355,20 +313,11 @@ export namespace BridgeCompletedEvent {
 }
 
 export namespace BridgeConfirmedEvent {
-  export type InputTuple = [
-    transferId: BytesLike,
-    relayer: AddressLike,
-    confirmations: BigNumberish
-  ];
-  export type OutputTuple = [
-    transferId: string,
-    relayer: string,
-    confirmations: bigint
-  ];
+  export type InputTuple = [transferId: BytesLike, relayer: AddressLike];
+  export type OutputTuple = [transferId: string, relayer: string];
   export interface OutputObject {
     transferId: string;
     relayer: string;
-    confirmations: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -380,25 +329,25 @@ export namespace BridgeInitiatedEvent {
   export type InputTuple = [
     transferId: BytesLike,
     sender: AddressLike,
-    tonRecipient: string,
     token: AddressLike,
     amount: BigNumberish,
+    tonRecipient: string,
     fee: BigNumberish
   ];
   export type OutputTuple = [
     transferId: string,
     sender: string,
-    tonRecipient: string,
     token: string,
     amount: bigint,
+    tonRecipient: string,
     fee: bigint
   ];
   export interface OutputObject {
     transferId: string;
     sender: string;
-    tonRecipient: string;
     token: string;
     amount: bigint;
+    tonRecipient: string;
     fee: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -408,23 +357,10 @@ export namespace BridgeInitiatedEvent {
 }
 
 export namespace ConfigUpdatedEvent {
-  export type InputTuple = [
-    minAmount: BigNumberish,
-    maxAmount: BigNumberish,
-    feeBps: BigNumberish,
-    threshold: BigNumberish
-  ];
-  export type OutputTuple = [
-    minAmount: bigint,
-    maxAmount: bigint,
-    feeBps: bigint,
-    threshold: bigint
-  ];
+  export type InputTuple = [newConfig: PolygonBridge.BridgeConfigStruct];
+  export type OutputTuple = [newConfig: PolygonBridge.BridgeConfigStructOutput];
   export interface OutputObject {
-    minAmount: bigint;
-    maxAmount: bigint;
-    feeBps: bigint;
-    threshold: bigint;
+    newConfig: PolygonBridge.BridgeConfigStructOutput;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -527,24 +463,11 @@ export namespace TokenSupportedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace TokenUnlockedEvent {
-  export type InputTuple = [
-    transferId: BytesLike,
-    recipient: AddressLike,
-    token: AddressLike,
-    amount: BigNumberish
-  ];
-  export type OutputTuple = [
-    transferId: string,
-    recipient: string,
-    token: string,
-    amount: bigint
-  ];
+export namespace UnpausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
   export interface OutputObject {
-    transferId: string;
-    recipient: string;
-    token: string;
-    amount: bigint;
+    account: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -552,11 +475,11 @@ export namespace TokenUnlockedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace UnpausedEvent {
-  export type InputTuple = [account: AddressLike];
-  export type OutputTuple = [account: string];
+export namespace UpgradedEvent {
+  export type InputTuple = [implementation: AddressLike];
+  export type OutputTuple = [implementation: string];
   export interface OutputObject {
-    account: string;
+    implementation: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -609,24 +532,16 @@ export interface PolygonBridge extends BaseContract {
 
   DEFAULT_ADMIN_ROLE: TypedContractMethod<[], [string], "view">;
 
-  OPERATOR_ROLE: TypedContractMethod<[], [string], "view">;
-
   PAUSER_ROLE: TypedContractMethod<[], [string], "view">;
 
   RELAYER_ROLE: TypedContractMethod<[], [string], "view">;
 
+  UPGRADE_INTERFACE_VERSION: TypedContractMethod<[], [string], "view">;
+
   bridgeToTON: TypedContractMethod<
     [tonRecipient: string, token: AddressLike, amount: BigNumberish],
-    [string],
-    "payable"
-  >;
-
-  collectedFees: TypedContractMethod<[], [bigint], "view">;
-
-  completeTransfer: TypedContractMethod<
-    [transferId: BytesLike, tonTxHash: BytesLike],
     [void],
-    "nonpayable"
+    "payable"
   >;
 
   config: TypedContractMethod<
@@ -649,13 +564,11 @@ export interface PolygonBridge extends BaseContract {
     "nonpayable"
   >;
 
-  feeCollector: TypedContractMethod<[], [string], "view">;
-
   getRoleAdmin: TypedContractMethod<[role: BytesLike], [string], "view">;
 
   getTransfer: TypedContractMethod<
     [transferId: BytesLike],
-    [PolygonBridge.BridgeTransferStructOutput],
+    [PolygonBridge.TransferStructOutput],
     "view"
   >;
 
@@ -663,6 +576,12 @@ export interface PolygonBridge extends BaseContract {
     [role: BytesLike, account: AddressLike],
     [void],
     "nonpayable"
+  >;
+
+  hasConfirmed: TypedContractMethod<
+    [arg0: BytesLike, arg1: AddressLike],
+    [boolean],
+    "view"
   >;
 
   hasRole: TypedContractMethod<
@@ -674,7 +593,7 @@ export interface PolygonBridge extends BaseContract {
   initialize: TypedContractMethod<
     [
       _admin: AddressLike,
-      _feeCollector: AddressLike,
+      _wrappedTON: AddressLike,
       _config: PolygonBridge.BridgeConfigStruct
     ],
     [void],
@@ -685,11 +604,7 @@ export interface PolygonBridge extends BaseContract {
 
   paused: TypedContractMethod<[], [boolean], "view">;
 
-  relayerConfirmations: TypedContractMethod<
-    [arg0: BytesLike, arg1: AddressLike],
-    [boolean],
-    "view"
-  >;
+  proxiableUUID: TypedContractMethod<[], [string], "view">;
 
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
@@ -722,51 +637,34 @@ export interface PolygonBridge extends BaseContract {
   transfers: TypedContractMethod<
     [arg0: BytesLike],
     [
-      [
-        string,
-        string,
-        string,
-        bigint,
-        bigint,
-        bigint,
-        string,
-        bigint,
-        bigint
-      ] & {
+      [string, string, bigint, string, bigint, bigint, boolean] & {
         sender: string;
-        tonRecipient: string;
         token: string;
         amount: bigint;
-        fee: bigint;
+        tonRecipient: string;
         timestamp: bigint;
-        tonTxHash: string;
-        status: bigint;
         confirmations: bigint;
+        completed: boolean;
       }
     ],
     "view"
   >;
 
-  unlockTokens: TypedContractMethod<
-    [
-      recipient: AddressLike,
-      token: AddressLike,
-      amount: BigNumberish,
-      tonTxHash: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-
   unpause: TypedContractMethod<[], [void], "nonpayable">;
 
   updateConfig: TypedContractMethod<
-    [_config: PolygonBridge.BridgeConfigStruct],
+    [newConfig: PolygonBridge.BridgeConfigStruct],
     [void],
     "nonpayable"
   >;
 
-  withdrawFees: TypedContractMethod<[], [void], "nonpayable">;
+  upgradeToAndCall: TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+
+  wrappedTON: TypedContractMethod<[], [string], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -776,30 +674,20 @@ export interface PolygonBridge extends BaseContract {
     nameOrSignature: "DEFAULT_ADMIN_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "OPERATOR_ROLE"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
     nameOrSignature: "PAUSER_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "RELAYER_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "UPGRADE_INTERFACE_VERSION"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "bridgeToTON"
   ): TypedContractMethod<
     [tonRecipient: string, token: AddressLike, amount: BigNumberish],
-    [string],
-    "payable"
-  >;
-  getFunction(
-    nameOrSignature: "collectedFees"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "completeTransfer"
-  ): TypedContractMethod<
-    [transferId: BytesLike, tonTxHash: BytesLike],
     [void],
-    "nonpayable"
+    "payable"
   >;
   getFunction(
     nameOrSignature: "config"
@@ -820,16 +708,13 @@ export interface PolygonBridge extends BaseContract {
     nameOrSignature: "confirmTransfer"
   ): TypedContractMethod<[transferId: BytesLike], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "feeCollector"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
     nameOrSignature: "getRoleAdmin"
   ): TypedContractMethod<[role: BytesLike], [string], "view">;
   getFunction(
     nameOrSignature: "getTransfer"
   ): TypedContractMethod<
     [transferId: BytesLike],
-    [PolygonBridge.BridgeTransferStructOutput],
+    [PolygonBridge.TransferStructOutput],
     "view"
   >;
   getFunction(
@@ -838,6 +723,13 @@ export interface PolygonBridge extends BaseContract {
     [role: BytesLike, account: AddressLike],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "hasConfirmed"
+  ): TypedContractMethod<
+    [arg0: BytesLike, arg1: AddressLike],
+    [boolean],
+    "view"
   >;
   getFunction(
     nameOrSignature: "hasRole"
@@ -851,7 +743,7 @@ export interface PolygonBridge extends BaseContract {
   ): TypedContractMethod<
     [
       _admin: AddressLike,
-      _feeCollector: AddressLike,
+      _wrappedTON: AddressLike,
       _config: PolygonBridge.BridgeConfigStruct
     ],
     [void],
@@ -864,12 +756,8 @@ export interface PolygonBridge extends BaseContract {
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
-    nameOrSignature: "relayerConfirmations"
-  ): TypedContractMethod<
-    [arg0: BytesLike, arg1: AddressLike],
-    [boolean],
-    "view"
-  >;
+    nameOrSignature: "proxiableUUID"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "renounceRole"
   ): TypedContractMethod<
@@ -905,41 +793,17 @@ export interface PolygonBridge extends BaseContract {
   ): TypedContractMethod<
     [arg0: BytesLike],
     [
-      [
-        string,
-        string,
-        string,
-        bigint,
-        bigint,
-        bigint,
-        string,
-        bigint,
-        bigint
-      ] & {
+      [string, string, bigint, string, bigint, bigint, boolean] & {
         sender: string;
-        tonRecipient: string;
         token: string;
         amount: bigint;
-        fee: bigint;
+        tonRecipient: string;
         timestamp: bigint;
-        tonTxHash: string;
-        status: bigint;
         confirmations: bigint;
+        completed: boolean;
       }
     ],
     "view"
-  >;
-  getFunction(
-    nameOrSignature: "unlockTokens"
-  ): TypedContractMethod<
-    [
-      recipient: AddressLike,
-      token: AddressLike,
-      amount: BigNumberish,
-      tonTxHash: BytesLike
-    ],
-    [void],
-    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "unpause"
@@ -947,21 +811,21 @@ export interface PolygonBridge extends BaseContract {
   getFunction(
     nameOrSignature: "updateConfig"
   ): TypedContractMethod<
-    [_config: PolygonBridge.BridgeConfigStruct],
+    [newConfig: PolygonBridge.BridgeConfigStruct],
     [void],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "withdrawFees"
-  ): TypedContractMethod<[], [void], "nonpayable">;
-
-  getEvent(
-    key: "BridgeCancelled"
-  ): TypedContractEvent<
-    BridgeCancelledEvent.InputTuple,
-    BridgeCancelledEvent.OutputTuple,
-    BridgeCancelledEvent.OutputObject
+    nameOrSignature: "upgradeToAndCall"
+  ): TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
   >;
+  getFunction(
+    nameOrSignature: "wrappedTON"
+  ): TypedContractMethod<[], [string], "view">;
+
   getEvent(
     key: "BridgeCompleted"
   ): TypedContractEvent<
@@ -1033,33 +897,22 @@ export interface PolygonBridge extends BaseContract {
     TokenSupportedEvent.OutputObject
   >;
   getEvent(
-    key: "TokenUnlocked"
-  ): TypedContractEvent<
-    TokenUnlockedEvent.InputTuple,
-    TokenUnlockedEvent.OutputTuple,
-    TokenUnlockedEvent.OutputObject
-  >;
-  getEvent(
     key: "Unpaused"
   ): TypedContractEvent<
     UnpausedEvent.InputTuple,
     UnpausedEvent.OutputTuple,
     UnpausedEvent.OutputObject
   >;
+  getEvent(
+    key: "Upgraded"
+  ): TypedContractEvent<
+    UpgradedEvent.InputTuple,
+    UpgradedEvent.OutputTuple,
+    UpgradedEvent.OutputObject
+  >;
 
   filters: {
-    "BridgeCancelled(bytes32,string)": TypedContractEvent<
-      BridgeCancelledEvent.InputTuple,
-      BridgeCancelledEvent.OutputTuple,
-      BridgeCancelledEvent.OutputObject
-    >;
-    BridgeCancelled: TypedContractEvent<
-      BridgeCancelledEvent.InputTuple,
-      BridgeCancelledEvent.OutputTuple,
-      BridgeCancelledEvent.OutputObject
-    >;
-
-    "BridgeCompleted(bytes32,bytes32)": TypedContractEvent<
+    "BridgeCompleted(bytes32)": TypedContractEvent<
       BridgeCompletedEvent.InputTuple,
       BridgeCompletedEvent.OutputTuple,
       BridgeCompletedEvent.OutputObject
@@ -1070,7 +923,7 @@ export interface PolygonBridge extends BaseContract {
       BridgeCompletedEvent.OutputObject
     >;
 
-    "BridgeConfirmed(bytes32,address,uint256)": TypedContractEvent<
+    "BridgeConfirmed(bytes32,address)": TypedContractEvent<
       BridgeConfirmedEvent.InputTuple,
       BridgeConfirmedEvent.OutputTuple,
       BridgeConfirmedEvent.OutputObject
@@ -1081,7 +934,7 @@ export interface PolygonBridge extends BaseContract {
       BridgeConfirmedEvent.OutputObject
     >;
 
-    "BridgeInitiated(bytes32,address,string,address,uint256,uint256)": TypedContractEvent<
+    "BridgeInitiated(bytes32,address,address,uint256,string,uint256)": TypedContractEvent<
       BridgeInitiatedEvent.InputTuple,
       BridgeInitiatedEvent.OutputTuple,
       BridgeInitiatedEvent.OutputObject
@@ -1092,7 +945,7 @@ export interface PolygonBridge extends BaseContract {
       BridgeInitiatedEvent.OutputObject
     >;
 
-    "ConfigUpdated(uint256,uint256,uint256,uint256)": TypedContractEvent<
+    "ConfigUpdated(tuple)": TypedContractEvent<
       ConfigUpdatedEvent.InputTuple,
       ConfigUpdatedEvent.OutputTuple,
       ConfigUpdatedEvent.OutputObject
@@ -1169,17 +1022,6 @@ export interface PolygonBridge extends BaseContract {
       TokenSupportedEvent.OutputObject
     >;
 
-    "TokenUnlocked(bytes32,address,address,uint256)": TypedContractEvent<
-      TokenUnlockedEvent.InputTuple,
-      TokenUnlockedEvent.OutputTuple,
-      TokenUnlockedEvent.OutputObject
-    >;
-    TokenUnlocked: TypedContractEvent<
-      TokenUnlockedEvent.InputTuple,
-      TokenUnlockedEvent.OutputTuple,
-      TokenUnlockedEvent.OutputObject
-    >;
-
     "Unpaused(address)": TypedContractEvent<
       UnpausedEvent.InputTuple,
       UnpausedEvent.OutputTuple,
@@ -1189,6 +1031,17 @@ export interface PolygonBridge extends BaseContract {
       UnpausedEvent.InputTuple,
       UnpausedEvent.OutputTuple,
       UnpausedEvent.OutputObject
+    >;
+
+    "Upgraded(address)": TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
+    >;
+    Upgraded: TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
     >;
   };
 }

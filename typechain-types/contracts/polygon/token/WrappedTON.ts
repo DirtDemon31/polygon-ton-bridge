@@ -29,6 +29,7 @@ export interface WrappedTONInterface extends Interface {
       | "DEFAULT_ADMIN_ROLE"
       | "MINTER_ROLE"
       | "PAUSER_ROLE"
+      | "UPGRADE_INTERFACE_VERSION"
       | "allowance"
       | "approve"
       | "balanceOf"
@@ -45,6 +46,7 @@ export interface WrappedTONInterface extends Interface {
       | "name"
       | "pause"
       | "paused"
+      | "proxiableUUID"
       | "renounceRole"
       | "revokeRole"
       | "supportsInterface"
@@ -54,6 +56,7 @@ export interface WrappedTONInterface extends Interface {
       | "transferFrom"
       | "unpause"
       | "updateBridge"
+      | "upgradeToAndCall"
   ): FunctionFragment;
 
   getEvent(
@@ -69,6 +72,7 @@ export interface WrappedTONInterface extends Interface {
       | "TokensMinted"
       | "Transfer"
       | "Unpaused"
+      | "Upgraded"
   ): EventFragment;
 
   encodeFunctionData(
@@ -81,6 +85,10 @@ export interface WrappedTONInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "PAUSER_ROLE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -130,6 +138,10 @@ export interface WrappedTONInterface extends Interface {
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "proxiableUUID",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, AddressLike]
   ): string;
@@ -159,6 +171,10 @@ export interface WrappedTONInterface extends Interface {
     functionFragment: "updateBridge",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "upgradeToAndCall",
+    values: [AddressLike, BytesLike]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
@@ -170,6 +186,10 @@ export interface WrappedTONInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "PAUSER_ROLE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
@@ -195,6 +215,10 @@ export interface WrappedTONInterface extends Interface {
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "proxiableUUID",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
   ): Result;
@@ -216,6 +240,10 @@ export interface WrappedTONInterface extends Interface {
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateBridge",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "upgradeToAndCall",
     data: BytesLike
   ): Result;
 }
@@ -403,6 +431,18 @@ export namespace UnpausedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace UpgradedEvent {
+  export type InputTuple = [implementation: AddressLike];
+  export type OutputTuple = [implementation: string];
+  export interface OutputObject {
+    implementation: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export interface WrappedTON extends BaseContract {
   connect(runner?: ContractRunner | null): WrappedTON;
   waitForDeployment(): Promise<this>;
@@ -451,6 +491,8 @@ export interface WrappedTON extends BaseContract {
   MINTER_ROLE: TypedContractMethod<[], [string], "view">;
 
   PAUSER_ROLE: TypedContractMethod<[], [string], "view">;
+
+  UPGRADE_INTERFACE_VERSION: TypedContractMethod<[], [string], "view">;
 
   allowance: TypedContractMethod<
     [owner: AddressLike, spender: AddressLike],
@@ -516,6 +558,8 @@ export interface WrappedTON extends BaseContract {
 
   paused: TypedContractMethod<[], [boolean], "view">;
 
+  proxiableUUID: TypedContractMethod<[], [string], "view">;
+
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
     [void],
@@ -558,6 +602,12 @@ export interface WrappedTON extends BaseContract {
     "nonpayable"
   >;
 
+  upgradeToAndCall: TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -570,6 +620,9 @@ export interface WrappedTON extends BaseContract {
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "PAUSER_ROLE"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "UPGRADE_INTERFACE_VERSION"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "allowance"
@@ -652,6 +705,9 @@ export interface WrappedTON extends BaseContract {
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
+    nameOrSignature: "proxiableUUID"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "renounceRole"
   ): TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
@@ -694,6 +750,13 @@ export interface WrappedTON extends BaseContract {
   getFunction(
     nameOrSignature: "updateBridge"
   ): TypedContractMethod<[newBridge: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "upgradeToAndCall"
+  ): TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
 
   getEvent(
     key: "Approval"
@@ -771,6 +834,13 @@ export interface WrappedTON extends BaseContract {
     UnpausedEvent.InputTuple,
     UnpausedEvent.OutputTuple,
     UnpausedEvent.OutputObject
+  >;
+  getEvent(
+    key: "Upgraded"
+  ): TypedContractEvent<
+    UpgradedEvent.InputTuple,
+    UpgradedEvent.OutputTuple,
+    UpgradedEvent.OutputObject
   >;
 
   filters: {
@@ -893,6 +963,17 @@ export interface WrappedTON extends BaseContract {
       UnpausedEvent.InputTuple,
       UnpausedEvent.OutputTuple,
       UnpausedEvent.OutputObject
+    >;
+
+    "Upgraded(address)": TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
+    >;
+    Upgraded: TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
     >;
   };
 }

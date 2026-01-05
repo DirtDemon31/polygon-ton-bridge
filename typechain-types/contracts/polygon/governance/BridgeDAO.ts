@@ -30,6 +30,7 @@ export interface BridgeDAOInterface extends Interface {
       | "CLOCK_MODE"
       | "COUNTING_MODE"
       | "EXTENDED_BALLOT_TYPEHASH"
+      | "UPGRADE_INTERFACE_VERSION"
       | "cancel"
       | "castVote"
       | "castVoteBySig"
@@ -58,8 +59,7 @@ export interface BridgeDAOInterface extends Interface {
       | "proposalThreshold"
       | "proposalVotes"
       | "propose"
-      | "proposeBridgeConfigUpdate"
-      | "proposeRelayerChange"
+      | "proxiableUUID"
       | "queue"
       | "quorum"
       | "quorumDenominator"
@@ -75,6 +75,7 @@ export interface BridgeDAOInterface extends Interface {
       | "token"
       | "updateQuorumNumerator"
       | "updateTimelock"
+      | "upgradeToAndCall"
       | "version"
       | "votingDelay"
       | "votingPeriod"
@@ -82,9 +83,7 @@ export interface BridgeDAOInterface extends Interface {
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "BridgeParameterChanged"
       | "EIP712DomainChanged"
-      | "EmergencyActionExecuted"
       | "Initialized"
       | "ProposalCanceled"
       | "ProposalCreated"
@@ -92,8 +91,8 @@ export interface BridgeDAOInterface extends Interface {
       | "ProposalQueued"
       | "ProposalThresholdSet"
       | "QuorumNumeratorUpdated"
-      | "RelayerProposed"
       | "TimelockChange"
+      | "Upgraded"
       | "VoteCast"
       | "VoteCastWithParams"
       | "VotingDelaySet"
@@ -114,6 +113,10 @@ export interface BridgeDAOInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "EXTENDED_BALLOT_TYPEHASH",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -233,19 +236,8 @@ export interface BridgeDAOInterface extends Interface {
     values: [AddressLike[], BigNumberish[], BytesLike[], string]
   ): string;
   encodeFunctionData(
-    functionFragment: "proposeBridgeConfigUpdate",
-    values: [
-      AddressLike,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      string
-    ]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "proposeRelayerChange",
-    values: [AddressLike, boolean, AddressLike, string]
+    functionFragment: "proxiableUUID",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "queue",
@@ -298,6 +290,10 @@ export interface BridgeDAOInterface extends Interface {
     functionFragment: "updateTimelock",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "upgradeToAndCall",
+    values: [AddressLike, BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "version", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "votingDelay",
@@ -319,6 +315,10 @@ export interface BridgeDAOInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "EXTENDED_BALLOT_TYPEHASH",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "UPGRADE_INTERFACE_VERSION",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "cancel", data: BytesLike): Result;
@@ -404,11 +404,7 @@ export interface BridgeDAOInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "propose", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "proposeBridgeConfigUpdate",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "proposeRelayerChange",
+    functionFragment: "proxiableUUID",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "queue", data: BytesLike): Result;
@@ -453,6 +449,10 @@ export interface BridgeDAOInterface extends Interface {
     functionFragment: "updateTimelock",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "upgradeToAndCall",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "votingDelay",
@@ -464,45 +464,10 @@ export interface BridgeDAOInterface extends Interface {
   ): Result;
 }
 
-export namespace BridgeParameterChangedEvent {
-  export type InputTuple = [
-    parameter: string,
-    oldValue: BigNumberish,
-    newValue: BigNumberish
-  ];
-  export type OutputTuple = [
-    parameter: string,
-    oldValue: bigint,
-    newValue: bigint
-  ];
-  export interface OutputObject {
-    parameter: string;
-    oldValue: bigint;
-    newValue: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace EIP712DomainChangedEvent {
   export type InputTuple = [];
   export type OutputTuple = [];
   export interface OutputObject {}
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace EmergencyActionExecutedEvent {
-  export type InputTuple = [target: AddressLike, data: BytesLike];
-  export type OutputTuple = [target: string, data: string];
-  export interface OutputObject {
-    target: string;
-    data: string;
-  }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -636,12 +601,12 @@ export namespace QuorumNumeratorUpdatedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace RelayerProposedEvent {
-  export type InputTuple = [relayer: AddressLike, add: boolean];
-  export type OutputTuple = [relayer: string, add: boolean];
+export namespace TimelockChangeEvent {
+  export type InputTuple = [oldTimelock: AddressLike, newTimelock: AddressLike];
+  export type OutputTuple = [oldTimelock: string, newTimelock: string];
   export interface OutputObject {
-    relayer: string;
-    add: boolean;
+    oldTimelock: string;
+    newTimelock: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -649,12 +614,11 @@ export namespace RelayerProposedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace TimelockChangeEvent {
-  export type InputTuple = [oldTimelock: AddressLike, newTimelock: AddressLike];
-  export type OutputTuple = [oldTimelock: string, newTimelock: string];
+export namespace UpgradedEvent {
+  export type InputTuple = [implementation: AddressLike];
+  export type OutputTuple = [implementation: string];
   export interface OutputObject {
-    oldTimelock: string;
-    newTimelock: string;
+    implementation: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -804,6 +768,8 @@ export interface BridgeDAO extends BaseContract {
 
   EXTENDED_BALLOT_TYPEHASH: TypedContractMethod<[], [string], "view">;
 
+  UPGRADE_INTERFACE_VERSION: TypedContractMethod<[], [string], "view">;
+
   cancel: TypedContractMethod<
     [
       targets: AddressLike[],
@@ -932,7 +898,7 @@ export interface BridgeDAO extends BaseContract {
   >;
 
   initialize: TypedContractMethod<
-    [_token: AddressLike, _timelock: AddressLike],
+    [_bridge: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -1026,29 +992,7 @@ export interface BridgeDAO extends BaseContract {
     "nonpayable"
   >;
 
-  proposeBridgeConfigUpdate: TypedContractMethod<
-    [
-      bridge: AddressLike,
-      minAmount: BigNumberish,
-      maxAmount: BigNumberish,
-      feeBps: BigNumberish,
-      threshold: BigNumberish,
-      description: string
-    ],
-    [bigint],
-    "nonpayable"
-  >;
-
-  proposeRelayerChange: TypedContractMethod<
-    [
-      relayer: AddressLike,
-      add: boolean,
-      bridge: AddressLike,
-      description: string
-    ],
-    [bigint],
-    "nonpayable"
-  >;
+  proxiableUUID: TypedContractMethod<[], [string], "view">;
 
   queue: TypedContractMethod<
     [
@@ -1121,6 +1065,12 @@ export interface BridgeDAO extends BaseContract {
     "nonpayable"
   >;
 
+  upgradeToAndCall: TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+
   version: TypedContractMethod<[], [string], "view">;
 
   votingDelay: TypedContractMethod<[], [bigint], "view">;
@@ -1142,6 +1092,9 @@ export interface BridgeDAO extends BaseContract {
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "EXTENDED_BALLOT_TYPEHASH"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "UPGRADE_INTERFACE_VERSION"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "cancel"
@@ -1287,7 +1240,7 @@ export interface BridgeDAO extends BaseContract {
   getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<
-    [_token: AddressLike, _timelock: AddressLike],
+    [_bridge: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -1374,31 +1327,8 @@ export interface BridgeDAO extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "proposeBridgeConfigUpdate"
-  ): TypedContractMethod<
-    [
-      bridge: AddressLike,
-      minAmount: BigNumberish,
-      maxAmount: BigNumberish,
-      feeBps: BigNumberish,
-      threshold: BigNumberish,
-      description: string
-    ],
-    [bigint],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "proposeRelayerChange"
-  ): TypedContractMethod<
-    [
-      relayer: AddressLike,
-      add: boolean,
-      bridge: AddressLike,
-      description: string
-    ],
-    [bigint],
-    "nonpayable"
-  >;
+    nameOrSignature: "proxiableUUID"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "queue"
   ): TypedContractMethod<
@@ -1466,6 +1396,13 @@ export interface BridgeDAO extends BaseContract {
     nameOrSignature: "updateTimelock"
   ): TypedContractMethod<[newTimelock: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "upgradeToAndCall"
+  ): TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+  getFunction(
     nameOrSignature: "version"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -1476,25 +1413,11 @@ export interface BridgeDAO extends BaseContract {
   ): TypedContractMethod<[], [bigint], "view">;
 
   getEvent(
-    key: "BridgeParameterChanged"
-  ): TypedContractEvent<
-    BridgeParameterChangedEvent.InputTuple,
-    BridgeParameterChangedEvent.OutputTuple,
-    BridgeParameterChangedEvent.OutputObject
-  >;
-  getEvent(
     key: "EIP712DomainChanged"
   ): TypedContractEvent<
     EIP712DomainChangedEvent.InputTuple,
     EIP712DomainChangedEvent.OutputTuple,
     EIP712DomainChangedEvent.OutputObject
-  >;
-  getEvent(
-    key: "EmergencyActionExecuted"
-  ): TypedContractEvent<
-    EmergencyActionExecutedEvent.InputTuple,
-    EmergencyActionExecutedEvent.OutputTuple,
-    EmergencyActionExecutedEvent.OutputObject
   >;
   getEvent(
     key: "Initialized"
@@ -1546,18 +1469,18 @@ export interface BridgeDAO extends BaseContract {
     QuorumNumeratorUpdatedEvent.OutputObject
   >;
   getEvent(
-    key: "RelayerProposed"
-  ): TypedContractEvent<
-    RelayerProposedEvent.InputTuple,
-    RelayerProposedEvent.OutputTuple,
-    RelayerProposedEvent.OutputObject
-  >;
-  getEvent(
     key: "TimelockChange"
   ): TypedContractEvent<
     TimelockChangeEvent.InputTuple,
     TimelockChangeEvent.OutputTuple,
     TimelockChangeEvent.OutputObject
+  >;
+  getEvent(
+    key: "Upgraded"
+  ): TypedContractEvent<
+    UpgradedEvent.InputTuple,
+    UpgradedEvent.OutputTuple,
+    UpgradedEvent.OutputObject
   >;
   getEvent(
     key: "VoteCast"
@@ -1589,17 +1512,6 @@ export interface BridgeDAO extends BaseContract {
   >;
 
   filters: {
-    "BridgeParameterChanged(string,uint256,uint256)": TypedContractEvent<
-      BridgeParameterChangedEvent.InputTuple,
-      BridgeParameterChangedEvent.OutputTuple,
-      BridgeParameterChangedEvent.OutputObject
-    >;
-    BridgeParameterChanged: TypedContractEvent<
-      BridgeParameterChangedEvent.InputTuple,
-      BridgeParameterChangedEvent.OutputTuple,
-      BridgeParameterChangedEvent.OutputObject
-    >;
-
     "EIP712DomainChanged()": TypedContractEvent<
       EIP712DomainChangedEvent.InputTuple,
       EIP712DomainChangedEvent.OutputTuple,
@@ -1609,17 +1521,6 @@ export interface BridgeDAO extends BaseContract {
       EIP712DomainChangedEvent.InputTuple,
       EIP712DomainChangedEvent.OutputTuple,
       EIP712DomainChangedEvent.OutputObject
-    >;
-
-    "EmergencyActionExecuted(address,bytes)": TypedContractEvent<
-      EmergencyActionExecutedEvent.InputTuple,
-      EmergencyActionExecutedEvent.OutputTuple,
-      EmergencyActionExecutedEvent.OutputObject
-    >;
-    EmergencyActionExecuted: TypedContractEvent<
-      EmergencyActionExecutedEvent.InputTuple,
-      EmergencyActionExecutedEvent.OutputTuple,
-      EmergencyActionExecutedEvent.OutputObject
     >;
 
     "Initialized(uint64)": TypedContractEvent<
@@ -1699,17 +1600,6 @@ export interface BridgeDAO extends BaseContract {
       QuorumNumeratorUpdatedEvent.OutputObject
     >;
 
-    "RelayerProposed(address,bool)": TypedContractEvent<
-      RelayerProposedEvent.InputTuple,
-      RelayerProposedEvent.OutputTuple,
-      RelayerProposedEvent.OutputObject
-    >;
-    RelayerProposed: TypedContractEvent<
-      RelayerProposedEvent.InputTuple,
-      RelayerProposedEvent.OutputTuple,
-      RelayerProposedEvent.OutputObject
-    >;
-
     "TimelockChange(address,address)": TypedContractEvent<
       TimelockChangeEvent.InputTuple,
       TimelockChangeEvent.OutputTuple,
@@ -1719,6 +1609,17 @@ export interface BridgeDAO extends BaseContract {
       TimelockChangeEvent.InputTuple,
       TimelockChangeEvent.OutputTuple,
       TimelockChangeEvent.OutputObject
+    >;
+
+    "Upgraded(address)": TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
+    >;
+    Upgraded: TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
     >;
 
     "VoteCast(address,uint256,uint8,uint256,string)": TypedContractEvent<

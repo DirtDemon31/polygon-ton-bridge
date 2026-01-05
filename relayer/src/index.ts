@@ -7,6 +7,7 @@ import {
     POLL_INTERVAL,
 } from "./config";
 import { POLYGON_BRIDGE_ABI } from "./abi";
+import { sendNativeTon } from "./tonService";
 
 async function main() {
     if (!RELAYER_PRIVATE_KEY) {
@@ -80,7 +81,7 @@ async function main() {
                 console.log("  tonRecipient: ", tonRecipient);
                 console.log("  fee:          ", ethers.formatEther(fee), "\n");
 
-                // Fetch full transfer struct from on-chain storage
+                // 1) Read full on-chain transfer struct (for debugging / safety)
                 const t = await bridge.getTransfer(transferId);
                 console.log("  ↳ On-chain Transfer struct:");
                 console.log("     sender:        ", t.sender);
@@ -91,10 +92,38 @@ async function main() {
                 console.log("     confirmations: ", t.confirmations.toString());
                 console.log("     completed:     ", t.completed, "\n");
 
-                // Later:
-                // 1) Use tonRecipient & amount to act on TON chain.
-                // 2) After TON confirms, call:
-                //      await bridge.confirmTransfer(transferId);
+                if (t.completed) {
+                    console.log("  ↳ Transfer already completed on Polygon. Skipping.\n");
+                    continue;
+                }
+
+                // 2) TON side: send native TON (stubbed)
+                const amountTon = ethers.formatEther(t.amount); // interpret 1 POL as 1 TON for now
+                const tonResult = await sendNativeTon(t.tonRecipient, amountTon);
+
+                if (!tonResult.success) {
+                    console.log(
+                        "⚠️  TON transfer failed or not confirmed. Skipping confirmTransfer for now.\n"
+                    );
+                    continue;
+                }
+
+                console.log(
+                    "✅ [TON] Transfer simulated with tx id:",
+                    tonResult.tonTxId,
+                    "\n"
+                );
+
+                // 3) Confirm transfer on Polygon as relayer
+                console.log("✅ Calling confirmTransfer on Polygon...");
+                const confirmTx = await bridge.confirmTransfer(transferId);
+                const confirmReceipt = await confirmTx.wait();
+                console.log("   confirmTransfer tx hash:", confirmReceipt?.hash);
+
+                const tAfter = await bridge.getTransfer(transferId);
+                console.log("  ↳ Transfer after confirmation:");
+                console.log("     confirmations: ", tAfter.confirmations.toString());
+                console.log("     completed:     ", tAfter.completed, "\n");
             }
         } catch (err: any) {
             console.error("Poll error:", err.message || err);
