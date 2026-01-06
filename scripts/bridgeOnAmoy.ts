@@ -13,9 +13,11 @@ async function main() {
 
     const bridge = await ethers.getContractAt("PolygonBridge", BRIDGE_ADDRESS);
 
-    // Small amount of native POL to bridge (0.1)
+    // Small amount of native POL to bridge
     const amount = ethers.parseEther("0.1");
-    const tonRecipient = "EQC_example_TON_address_base64url";
+
+    // Your TON testnet recipient address (base64url)
+    const tonRecipient = "0QAKc-6uINqn8h5EZOfyAcEd6Qx0cGGZ_kpAh_DYlhSouXdf";
 
     console.log("Calling bridgeToTON...");
     console.log("  tonRecipient:", tonRecipient);

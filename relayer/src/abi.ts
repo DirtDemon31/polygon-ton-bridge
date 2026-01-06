@@ -19,9 +19,11 @@ export const POLYGON_BRIDGE_ABI = [
     "function transferNonce() view returns (uint256)",
     "function supportedTokens(address token) view returns (bool)",
     "function hasConfirmed(bytes32 transferId, address relayer) view returns (bool)",
-    "function getTransfer(bytes32 transferId) view returns (address sender,address token,uint256 amount,string tonRecipient,uint256 timestamp,uint256 confirmations,bool completed)",
 
-    // State-changing functions the relayer / admin may use
+    // NOTE: Transfer is a struct; represent it as a tuple.
+    "function getTransfer(bytes32 transferId) view returns (tuple(address sender,address token,uint256 amount,string tonRecipient,uint256 timestamp,uint256 confirmations,bool completed))",
+
+    // State-changing functions
     "function bridgeToTON(string tonRecipient, address token, uint256 amount) payable",
     "function confirmTransfer(bytes32 transferId)",
     "function updateConfig((uint256 minBridgeAmount,uint256 maxBridgeAmount,uint256 feeBasisPoints,uint256 relayerThreshold,bool enabled) newConfig)",

@@ -5,6 +5,7 @@ import {
     BRIDGE_ADDRESS,
     RELAYER_PRIVATE_KEY,
     POLL_INTERVAL,
+    RELAYER_START_BLOCK,
 } from "./config";
 import { POLYGON_BRIDGE_ABI } from "./abi";
 import { sendNativeTon } from "./tonService";
@@ -27,8 +28,18 @@ async function main() {
         wallet
     );
 
-    let lastBlock = await provider.getBlockNumber();
-    console.log("Starting from block:", lastBlock, "\n");
+    let lastBlock: number;
+    if (typeof RELAYER_START_BLOCK === "number") {
+        lastBlock = RELAYER_START_BLOCK - 1;
+        console.log(
+            "Starting from configured RELAYER_START_BLOCK:",
+            RELAYER_START_BLOCK,
+            "\n"
+        );
+    } else {
+        lastBlock = await provider.getBlockNumber();
+        console.log("Starting from latest block:", lastBlock, "\n");
+    }
 
     async function poll() {
         try {
@@ -81,7 +92,6 @@ async function main() {
                 console.log("  tonRecipient: ", tonRecipient);
                 console.log("  fee:          ", ethers.formatEther(fee), "\n");
 
-                // 1) Read full on-chain transfer struct (for debugging / safety)
                 const t = await bridge.getTransfer(transferId);
                 console.log("  ↳ On-chain Transfer struct:");
                 console.log("     sender:        ", t.sender);
@@ -93,17 +103,21 @@ async function main() {
                 console.log("     completed:     ", t.completed, "\n");
 
                 if (t.completed) {
-                    console.log("  ↳ Transfer already completed on Polygon. Skipping.\n");
+                    console.log(
+                        "  ↳ Transfer already completed on Polygon. Skipping.\n"
+                    );
                     continue;
                 }
 
-                // 2) TON side: send native TON (stubbed)
-                const amountTon = ethers.formatEther(t.amount); // interpret 1 POL as 1 TON for now
+                // TON side: send native TON (with retry/backoff)
+                const amountTon = ethers.formatEther(t.amount);
                 const tonResult = await sendNativeTon(t.tonRecipient, amountTon);
 
                 if (!tonResult.success) {
                     console.log(
-                        "⚠️  TON transfer failed or not confirmed. Skipping confirmTransfer for now.\n"
+                        "⚠️  TON transfer failed or not confirmed. Skipping confirmTransfer.\n",
+                        "    Reason:",
+                        tonResult.errorMessage || "Unknown\n"
                     );
                     continue;
                 }
@@ -114,7 +128,7 @@ async function main() {
                     "\n"
                 );
 
-                // 3) Confirm transfer on Polygon as relayer
+                // Confirm transfer on Polygon as relayer
                 console.log("✅ Calling confirmTransfer on Polygon...");
                 const confirmTx = await bridge.confirmTransfer(transferId);
                 const confirmReceipt = await confirmTx.wait();
